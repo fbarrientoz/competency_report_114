@@ -1,107 +1,174 @@
 class Node:
-    def __init__(self, val):
-        self.val = val
-        self.next = None
-        self.prev = None
+    def __init__(self, data, prev_node=None, next_node=None):
+        self.data = data
+        self.prev_node = prev_node
+        self.next_node = next_node
 
-    def __str__(self):
-        return str(self.val)
+    def __repr__(self):
+        return "<Node data: %s>" % self.data
 
+class DoublyLinkedList:
+    def __init__(self):
+        self.head = None
+        self.__count = 0
 
-class DoubleLinkedList:
-    def __init__(self, val):
-        self.head = Node(val)
+    def is_empty(self):
+        return self.head is None
 
-    def __str__(self):
-        result = ""
-        tmp = self.head
-        while tmp:
-            result += str(tmp.val) + (' --> ' if tmp.next else '')
-            tmp = tmp.next
-        return result
+    def __len__(self):
+        return self.__count
 
-    def find(self, value, base_node=None, foward=True):
-        if not base_node:
-            base_node = self.head
+    def add(self, data):
+        """
+        Adds new Node containing data to head of the list
+        Also called prepend
+        Takes O(1) time
+        """
 
-        while base_node:
-            if base_node.val == value:
-                return base_node
+        new_head = Node(data, prev_node=None, next_node=self.head)
 
-            if foward:
-                base_node = base_node.next
+        if not self.is_empty():
+            self.head.prev_node = new_head
+
+        self.head = new_head
+        self.__count += 1
+
+    def search(self, key):
+        """
+        Search for the first node containing data that matches the key
+        Returns the node or `None` if not found
+        Takes O(n) time
+        """
+
+        current = self.head
+
+        while current:
+            if current.data == key:
+                return current
             else:
-                base_node = base_node.prev
+                current = current.next_node
+        return None
 
-    def append(self, val):
-        tmp = self.head
-        if not tmp:
+    def node_at_index(self, index):
+        """
+        Returns the Node at specified index
+        Takes O(n) time
+        """
+
+        if index >= self.__count:
+            raise IndexError('index out of range')
+
+        if index == 0:
+            return self.head
+
+        current = self.head
+        position = 0
+
+        while position < index:
+            current = current.next_node
+            position += 1
+
+        return current
+
+    def insert(self, data, index):
+        """
+        Inserts a new Node containing data at index position
+        Insertion takes O(1) time but finding node at insertion point takes
+        O(n) time.
+        Takes overall O(n) time.
+        """
+
+        if index >= self.__count:
+            raise IndexError('index out of range')
+
+        if index == 0:
+            self.add(data)
             return
+        if index > 0:
+            current_node = self.node_at_index(index)
+            prev_node = current_node.prev_node
+            new_node = Node(data, prev_node=prev_node, next_node=current_node)
+            current_node.prev_node = new_node
+            prev_node.next_node = new_node
 
-        while tmp.next:
-            tmp = tmp.next
+        self.__count += 1
 
-        tmp.next = Node(val)
-        tmp.next.prev = tmp
-        
-        return tmp.next
+    def remove(self, key):
+        """
+        Removes Node containing data that matches the key
+        Returns the node or `None` if key doesn't exist
+        Takes O(n) time
+        """
 
-    def prepend(self, val):
-        if not self.head:
-            return
+        current = self.head
+        found = False
 
-        self.head.prev = Node(val)
-        self.head.prev.next = self.head
-        self.head = self.head.prev
-
-    def remove(self, value, node=None):
-        nd = node if node else self.find(value)
-        if nd:
-            if nd.prev:
-                nd.prev.next = nd.next
-            if nd.next:
-                nd.next.prev = nd.prev
-                if nd == self.head:
-                    self.head = nd.next
-        else:
-            raise Exception("Invalid base node.")
-
-    def insert(self, find_value, value, after_insted_of_before=True, node=None):
-        nd = node if node else self.find(find_value)
-        res_node = Node(value)
-        if nd:
-            if after_insted_of_before:
-                n0 = nd
-                n1 = nd.next
+        while current and not found:
+            if current.data == key and current is self.head:
+                found = True
+                self.head = current.next_node
+                self.head.prev_node = None
+                self.__count -= 1
+                return current
+            elif current.data == key:
+                found = True
+                prev_node = current.prev_node
+                next_node = current.next_node
+                prev_node.next_node = next_node
+                next_node.prev_node = prev_node
+                self.__count -= 1
+                return current
             else:
-                n0 = nd.prev
-                n1 = nd
+                current = current.next_node
 
-            if n0:
-                n0.next = res_node
-            if n1:
-                n1.prev = res_node
+    def remove_at_index(self, index):
+        """
+        Removes Node at specified index
+        Takes O(n) time
+        """
 
-            res_node.prev = n0
-            res_node.next = n1
-        else:
-            raise Exception("Error")
+        if index >= self.__count:
+            raise IndexError('index out of range')
+
+        current = self.head
+
+        if index == 0:
+            self.head = current.next_node
+            self.head.prev_node = None
+            self.__count -= 1
+            return current
+
+        current = self.node_at_index(index)
+        prev_node = current.prev_node
+        next_node = current.next_node
+        prev_node.next_node = next_node
+        next_node.prev_node = prev_node
+
+        self.__count -= 1
+
+        return current
+
+    def __iter__(self):
+        current = self.head
+
+        while current:
+            yield current
+            current = current.next_node
 
 
-if __name__ == '__main__':
-    ts = DoubleLinkedList(6)
-    ts.append(15)
-    ts.append(26)
-    ts.append(17)
-
-    ts.prepend(38)
-    ts.prepend(-1)
-
-    ts.remove(15)
-    ts.remove(17)
-
-    ts.insert(26, -25)
-    ts.insert(26, -24, False)
-
-    assert ts.find(-1, ts.find(17), False).val == -1, "Sfind"
-    print(ts)
+    def __repr__(self):
+        """
+        Return a string representation of the list.
+        Takes O(n) time.
+        """
+        nodes = []
+        current = self.head
+        while current:
+            if current is self.head:
+                nodes.append("[Head: %s]" % current.data)
+            elif current.next is None:
+                nodes.append("[Tail: %s]" % current.data)
+            else:
+                nodes.append("[%s]" % current.data)
+            current = current.next_node
+        return  '-> '.join(nodes)
